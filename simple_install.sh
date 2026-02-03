@@ -36,12 +36,8 @@ def status():
     if config_path:
         try:
             with open(config_path, 'r') as f:
-                for line in f:
-                    if 'FULLPAGEOS_URL=' in line:
-                        current_url = line.split('=', 1)[1].strip().strip('"')
-                        break
+                current_url = f.readline().strip()
         except: pass
-    
     return jsonify({
         'hostname': socket.gethostname(),
         'uptime': run_command("uptime -p").get('output', 'Unknown'),
@@ -56,20 +52,12 @@ def status():
 def change_url():
     new_url = request.get_json().get('url')
     if not new_url: return jsonify({'success': False, 'error': 'No URL'}), 400
-    
     config_path = get_config_path()
     if not config_path: return jsonify({'success': False, 'error': 'Config not found'}), 500
-    
     try:
-        with open(config_path, 'r') as f: lines = f.readlines()
-        updated = False
-        for i, line in enumerate(lines):
-            if 'FULLPAGEOS_URL=' in line:
-                lines[i] = f'FULLPAGEOS_URL="{new_url}"\n'
-                updated = True
-                break
-        if not updated: lines.append(f'FULLPAGEOS_URL="{new_url}"\n')
-        with open(config_path, 'w') as f: f.writelines(lines)
+        # Simply overwrite the entire file with just the new URL
+        with open(config_path, 'w') as f:
+            f.write(f'{new_url}\n')
         return jsonify({'success': True, 'message': f'URL updated to {new_url}', 'new_url': new_url})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
